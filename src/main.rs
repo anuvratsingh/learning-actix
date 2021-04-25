@@ -1,3 +1,6 @@
+// UNDERSTANDING: The way I understand it but not 100% sure if its right
+// PROBLEMS: The thing I don't get
+
 use actix_files as fs;
 use actix_session::{CookieSession, Session};
 use actix_utils::mpsc;
@@ -8,33 +11,39 @@ use actix_web::{
 use std::{env, io};
 
 
-
+/// favicon handler
 #[get("/favicon")]
 async fn favicon() -> Result<fs::NamedFile> {
     Ok(fs::NamedFile::open("../static/favicon.ico")?)
 }
 
+/// welcome index handler
 #[get("/welcome")]
 async fn welcome(session: Session, req: HttpRequest) -> Result<HttpResponse> {
     println!("{:?}", req);
-
+    // Session
+    // PROBLEMS: I don't get this session part, it sets counter as cookie what why does it matter in this example?
     let mut counter = 1;
     if let Some(count) = session.get::<i32>("counter")? {
         println!("Session value: {}", count);
         counter = count + 1;
     }
-
+    // Set counter to session
     session.set("counter", counter)?;
 
+    // Response and setting HTML headers
     Ok(HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
+        // UNDERSTANDING: It takes insides of `welcome.html` and passes it to body
         .body(include_str!("../static/welcome.html")))
 }
 
+/// Not Found handler
 async fn p404() -> Result<fs::NamedFile> {
     Ok(fs::NamedFile::open("../static/404.html")?.set_status_code(StatusCode::NOT_FOUND))
 }
 
+/// Response Body
 async fn response_body(path: web::Path<String>) -> HttpResponse {
     let text = format!("Hello {}!", *path);
 
@@ -43,7 +52,7 @@ async fn response_body(path: web::Path<String>) -> HttpResponse {
 
     HttpResponse::Ok().streaming(rx_body)
 }
-
+/// Handler with path parameters lile `/user/{name}`
 async fn with_param(req: HttpRequest, web::Path((name,)): web::Path<(String,)>) -> HttpResponse {
     println!("{:?}", req);
 
